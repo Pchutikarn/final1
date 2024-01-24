@@ -34,11 +34,13 @@ void OnDataRecv(uint8_t * mac_addr, uint8_t *incomingData, uint8_t len) {
   boardsStruct[myData.id-1].temp = myData.temp;
   boardsStruct[myData.id-1].humi = myData.humi;
   boardsStruct[myData.id-1].soilPer = myData.soilPer;
-  Serial.printf("temp: %d \n", boardsStruct[myData.id-1].temp);
-  Serial.printf("humi: %d \n", boardsStruct[myData.id-1].humi);
-  Serial.printf("soil per: %d \n", boardsStruct[myData.id-1].soilPer);
+   Serial.printf("temp: %f \n", boardsStruct[myData.id-1].temp);
+  Serial.printf("humi: %f \n", boardsStruct[myData.id-1].humi);
+  Serial.printf("soil per: %f \n", boardsStruct[myData.id-1].soilPer);
   Serial.println();
 }
+
+
  
 void setup() {
   // Initialize Serial Monitor
