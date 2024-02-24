@@ -6,7 +6,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-const int BOARD_ID = 2;
+const int BOARD_ID = 1;
 uint8_t broadcastAddress[] = {0x80, 0x7D, 0x3A, 0x37, 0x72, 0x2B};
 typedef struct struct_message
 {
@@ -99,6 +99,9 @@ void loop()
     myData.temp = bme.readTemperature();
     myData.humi = bme.readHumidity();
 
+    Serial.println("Value of myData.id: ");
+    Serial.println(myData.id);
+
     Serial.print("Temperature = ");
     Serial.print(myData.temp);
     Serial.println(" °C");
@@ -108,7 +111,7 @@ void loop()
     Serial.println(" %");
 
     valSoil = analogRead(A0);
-    myData.soilPer = map(valSoil, 0, 770, 100, 0);
+    myData.soilPer = map(valSoil, 0, 708, 100, 0);
     Serial.print("valSoil: ");
     Serial.println(valSoil);
 

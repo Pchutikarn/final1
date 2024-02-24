@@ -1,21 +1,31 @@
-// Slave (ตัวส่ง , ทาส)
-
+#include <ESP8266WiFi.h>
 #include <espnow.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-const int BOARD_ID = 1;
 uint8_t broadcastAddress[] = {0x80, 0x7D, 0x3A, 0x37, 0x72, 0x2B};
+
+const int BOARD_ID = 4;
 typedef struct struct_message
 {
   int id;
-  float temp;
-  float humi;
-  float soilPer;
+  int temp;
+  int humi;
+  int soilPer;
 } struct_message;
 struct_message myData;
+
+// Create peer interface
+// esp_now_peer_info_t peerInfo;
+
+// callback when data is sent
+void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus)
+{
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(sendStatus == 0 ? "Delivery Success" : "Delivery Fail");
+}
 
 #define BME_SCK 13
 #define BME_MISO 12
@@ -23,41 +33,16 @@ struct_message myData;
 #define BME_CS 10
 #define SEALEVELPRESSURE_HPA (1013.25)
 Adafruit_BME280 bme;
-
-#define ON_Board_LED 2
-
 int valSoil;
 unsigned status;
-long now = millis();
-long lastMeasure = 0;
-// #define DEEP_SLEEP_DURATION_MS (1e6 * 60 * 60)
-#define DEEP_SLEEP_DURATION_MS (1e6 * 59 * 60 + 57 * 1e3)
-
-
-void DeepSleep()
-{
-  Serial.println(F("I'm awake, but I'm going into deep sleep mode for a hour"));
-  Serial.flush();
-  ESP.deepSleep(DEEP_SLEEP_DURATION_MS);
-}
-
-void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus)
-{
-  Serial.print("\r\nLast Packet Send Status: ");
-  if (sendStatus == 0)
-  {
-    Serial.println("Delivery success");
-    DeepSleep();
-  }
-  else
-  {
-    Serial.println("Delivery fail");
-  }
-}
+unsigned long now;
+unsigned long lastMeasure;
+int interval = 10000;
 
 void setup()
 {
   Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
 
   if (esp_now_init() != 0)
   {
@@ -67,6 +52,7 @@ void setup()
 
   esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
   esp_now_register_send_cb(OnDataSent);
+
   esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
 
   status = bme.begin(0x76);
@@ -83,26 +69,22 @@ void setup()
       delay(10);
   }
   Serial.println("-- Default Test --");
-
-  pinMode(ON_Board_LED, OUTPUT);
-  digitalWrite(ON_Board_LED, HIGH);
 }
 
 void loop()
 {
   now = millis();
-
-  if (now - lastMeasure > 3000)
+  if (now - lastMeasure > interval)
   {
     lastMeasure = now;
+
     myData.id = BOARD_ID;
     myData.temp = bme.readTemperature();
-    myData.humi = bme.readHumidity();
-
     Serial.print("Temperature = ");
     Serial.print(myData.temp);
     Serial.println(" °C");
 
+    myData.humi = bme.readHumidity();
     Serial.print("Humidity = ");
     Serial.print(myData.humi);
     Serial.println(" %");
@@ -116,6 +98,6 @@ void loop()
     Serial.print(myData.soilPer);
     Serial.println(" %");
 
-    esp_now_send(0, (uint8_t *)&myData, sizeof(myData));
+    esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
   }
 }
